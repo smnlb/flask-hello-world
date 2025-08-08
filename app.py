@@ -2,12 +2,14 @@ from flask import Flask, request, jsonify
 import telebot
 import os
 import logging
+import time
 
 app = Flask(__name__)
 
 # Настройка бота
 TOKEN = os.environ.get('7936477847:AAGFEZeSzqqoeLLvcgjd_fMW56-_zdXx5_0')  # Получите токен от @BotFather
 bot = telebot.TeleBot(TOKEN)
+
 
 # Настройка логгирования
 logging.basicConfig(
@@ -60,15 +62,6 @@ def webhook():
     else:
         return jsonify({"error": "Invalid content type"}), 403
 
-# Установка вебхука при запуске
-@app.before_first_request
-def set_webhook():
-    if TOKEN:
-        webhook_url = f"https://flask-hello-world-tvob.onrender.com/webhook"
-        bot.remove_webhook()
-        bot.set_webhook(url=webhook_url)
-        logger.info(f"Webhook установлен на: {webhook_url}")
-
 # Главная страница
 @app.route('/')
 def hello_world():
@@ -77,17 +70,43 @@ def hello_world():
 # Статус бота
 @app.route('/status')
 def status():
-    webhook_info = bot.get_webhook_info() if TOKEN else {}
-    return jsonify({
-        "status": "running",
-        "webhook_set": webhook_info.url if webhook_info else None,
-        "bot_username": bot.get_me().username if TOKEN else "Not configured"
-    })
+    if TOKEN:
+        try:
+            webhook_info = bot.get_webhook_info()
+            bot_info = bot.get_me()
+            return jsonify({
+                "status": "running",
+                "webhook_set": webhook_info.url,
+                "bot_username": bot_info.username
+            })
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    else:
+        return jsonify({"status": "running", "message": "Token not configured"})
 
 # Для поддержания активности
 @app.route('/ping')
 def ping():
     return "pong", 200
 
+# Установка вебхука при запуске
+def set_webhook():
+    if TOKEN and os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
+        webhook_url = f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}/webhook"
+        try:
+            bot.remove_webhook()
+            time.sleep(1)
+            bot.set_webhook(url=webhook_url)
+            logger.info(f"Webhook установлен на: {webhook_url}")
+        except Exception as e:
+            logger.error(f"Ошибка при установке вебхука: {e}")
+
+# Устанавливаем вебхук при запуске приложения
+set_webhook()
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    # Для локального тестирования без вебхука
+    if TOKEN:
+        bot.polling(non_stop=True)
+    else:
+        app.run(host='0.0.0.0', port=8080, debug=True)
