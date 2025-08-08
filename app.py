@@ -54,13 +54,16 @@ def echo(message):
 # Вебхук для Telegram
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    if request.headers.get('content-type') == 'application/json':
-        json_data = request.get_json()
-        update = telebot.types.Update.de_json(json_data)
-        bot.process_new_updates([update])
-        return jsonify({"status": "ok"}), 200
-    else:
+    try:
+        if request.headers.get('content-type') == 'application/json':
+            json_data = request.get_json()
+            update = telebot.types.Update.de_json(json_data)
+            bot.process_new_updates([update])
+            return jsonify({"status": "ok"}), 200
         return jsonify({"error": "Invalid content type"}), 403
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 # Главная страница
 @app.route('/')
