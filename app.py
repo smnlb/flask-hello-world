@@ -64,7 +64,7 @@ def webhook():
 @app.before_first_request
 def set_webhook():
     if TOKEN:
-        webhook_url = f"https://{os.environ.get('https://flask-hello-world-tvob.onrender.com/')}/webhook"
+        webhook_url = f"https://flask-hello-world-tvob.onrender.com/webhook"
         bot.remove_webhook()
         bot.set_webhook(url=webhook_url)
         logger.info(f"Webhook установлен на: {webhook_url}")
