@@ -6,7 +6,7 @@ import logging
 app = Flask(__name__)
 
 # Настройка бота
-TOKEN = os.environ.get('TELEGRAM_TOKEN')  # Получите токен от @BotFather
+TOKEN = os.environ.get('7936477847:AAGFEZeSzqqoeLLvcgjd_fMW56-_zdXx5_0')  # Получите токен от @BotFather
 bot = telebot.TeleBot(TOKEN)
 
 # Настройка логгирования
